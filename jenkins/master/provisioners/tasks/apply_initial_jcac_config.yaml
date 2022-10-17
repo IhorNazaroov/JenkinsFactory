@@ -1,0 +1,51 @@
+- name: Wait for Jenkins to start up
+  uri:
+    url: "{{ jenkins_url }}"
+    user: admin
+    password: "{{ jenkins_initial_user_password }}"
+    validate_certs: no
+    status_code: 200
+    timeout: 5
+  register: jenkins_service_status
+  retries: 60
+  delay: 5
+  until: >
+    'status' in jenkins_service_status and
+    jenkins_service_status['status'] == 200
+
+- name: Find folders
+  shell:
+    chdir: "../config/job_templates"
+    cmd: "ls"
+  delegate_to: localhost
+  become: false
+  register: folders
+
+- name: Find job
+  command: echo {{ item.path }}
+  with_filetree: ../config/job_templates
+  when: item.state == 'file'
+  delegate_to: localhost
+  become: false
+  register: content
+
+- name: Copy jcac configurations
+  template:
+    src: '{{ item }}'
+    dest: "{{ jenkins_home }}/{{ item | basename | regex_replace('(.j2)$', '.yaml') }}"
+  with_fileglob: "../config/**.*"
+
+- name: Reload configuration
+  jenkins_script:
+    user: "admin"
+    password: "{{ jenkins_initial_user_password }}"
+    script: "
+      import io.jenkins.plugins.casc.ConfigurationAsCode;
+      ConfigurationAsCode.get().configure('{{ jenkins_home }}')"
+    validate_certs: no
+    url: "{{ jenkins_url }}"
+
+- name: Remove file job_reloadJCaC.yaml
+  file:
+    path: "{{ jenkins_home }}/job_reloadJCaC.yaml"
+    state: absent

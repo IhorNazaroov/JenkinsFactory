@@ -1,0 +1,49 @@
+--- 
+
+- name: Configure rdua-doaas base AMI
+  hosts: all
+  become: true
+  become_user: root
+  tasks:
+    - name: Disable SELinux
+      lineinfile:
+        path: /etc/selinux/config
+        regexp: '^SELINUX='
+        line: SELINUX=disabled
+
+    - name: Copy sshd_config file
+      copy:
+        src: sshd_config
+        dest: /etc/ssh/sshd_config 
+
+    - name: Install and change default version of python
+      include_role:
+        name: python
+
+    - name: Restart ssh service
+      service:
+        name: sshd
+        state: restarted
+
+    - name: Allow users of wheel group use sudo without password
+      lineinfile:
+        path: /etc/sudoers
+        regexp: '%wheel  ALL=(ALL)       ALL'
+        line: '%wheel  ALL=(ALL)       NOPASSWD: ALL'
+
+    - name: Run role user for regular_users
+      include_role:
+        name: user
+      with_items:
+        - ihor_nazarov
+      vars:
+        user_name: "{{ item }}"
+
+    - name: Run role user for service_users
+      include_role:
+        name: user
+      with_items:
+        - jenkins
+      vars:
+        user_name: "{{ item }}"
+        is_regular_user: false

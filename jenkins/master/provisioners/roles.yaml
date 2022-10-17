@@ -1,0 +1,11 @@
+project:
+  - EPM-JF
+admins:
+  - ihor_nazarov@epam.com
+emploee:
+  - "authenticated"
+  - "Org Employees"
+  - "Org Employees 01"
+  - "Org Employees 02"
+  - "Org Employees 03"
+  - "ORG External Users"

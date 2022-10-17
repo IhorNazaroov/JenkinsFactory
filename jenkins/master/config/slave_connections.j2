@@ -1,0 +1,15 @@
+jenkins:
+  clouds:
+  - amazonEC2:
+      cloudName: "RDUA AWS eu-central cloud"
+      credentialsId: "terraform-executor"
+      privateKey: "{{ jenkins_ssh_private_key_rsa_format | replace('\n','\\n') }}"
+      ec2EndpointUrl: "https://ec2.eu-central-1.amazonaws.com/"
+      region: "eu-central-1"
+      instanceCapStr: "10"
+      templates:
+{% filter indent(width=6, indentfirst=True) %}
+{% include "./slave_connections.d/packer_slave_connection.j2"%}
+
+{% include "./slave_connections.d/docker_slave_connection.j2" %}
+{% endfilter %}

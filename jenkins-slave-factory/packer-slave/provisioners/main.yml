@@ -1,0 +1,23 @@
+---
+
+- hosts: all
+  become: yes
+  become_user: root
+  roles:
+    - migrate_data_on_mount
+      
+  post_tasks:        
+  - name: Ensure that necessary packages are installed
+    yum:
+      name:
+        - epel-release 
+        - git 
+        - ansible
+        - unzip
+      state: latest
+
+  - name: Packer installation 
+    unarchive:
+      src: https://releases.hashicorp.com/packer/1.5.1/packer_1.5.1_linux_amd64.zip
+      dest: /usr/local/bin
+      remote_src: yes

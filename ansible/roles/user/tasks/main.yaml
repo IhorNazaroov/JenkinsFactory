@@ -1,0 +1,9 @@
+---
+
+- name: Execute regular user provisioning routin
+  import_tasks: add_regular_user.yml
+  when: is_regular_user
+
+- name: Execute service user provisioning routin
+  import_tasks: add_service_user.yml
+  when: not is_regular_user

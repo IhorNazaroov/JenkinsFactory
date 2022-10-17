@@ -1,0 +1,127 @@
+- name: Install java
+  yum:
+    name:
+      - java-1.8.0-openjdk-devel
+
+- name: Create nexus user
+  user:
+    name: nexus
+    shell: /bin/bash
+    groups: wheel
+    append: yes
+    system: yes
+
+- name: Get nexus
+  unarchive:
+    src: "http://download.sonatype.com/nexus/3/nexus-3.22.0-02-unix.tar.gz"
+    dest: /opt/
+    remote_src: yes
+
+- name: Disable firewall
+  service:
+    name: firewalld
+    enabled: no
+
+- name: Copy properties
+  copy:
+    src: "nexus.properties"
+    dest: /opt/sonatype-work/nexus3/etc/
+
+- name: Change ownership
+  shell:
+    cmd: "chown -R nexus /opt/nexus*/ && chgrp -R nexus /opt/nexus*/ && chown -R nexus /opt/sonatype-work && chgrp -R nexus /opt/sonatype-work"
+
+- name: Start nexus
+  shell:
+    cmd: "/opt/nexus*/bin/nexus start"
+  async: 45
+  poll: 0
+  become: true
+  become_user: nexus
+
+- name: Wait for nexus to startup
+  uri:
+    url: "http://localhost:8081"
+    status_code: 200
+    timeout: 5
+  register: jenkins_service_status
+  retries: 60
+  delay: 5
+  until: >
+    'status' in jenkins_service_status and
+    jenkins_service_status['status'] == 200
+
+- name: Get password
+  shell: "cat /opt/sonatype-work/nexus3/admin.password"
+  register: password
+
+- name: Template scripts
+  template:
+    src: "{{ item }}"
+    dest: ../../ansible/roles/nexus/files
+  with_fileglob: './templates/*.groovy'
+  delegate_to: localhost
+  become: false
+
+- name: Add script
+  uri:
+    url: 'http://localhost:8081/service/rest/v1/script'
+    url_username: admin
+    url_password: "{{- password.stdout }}"
+    force_basic_auth: yes
+    status_code: 200,204
+    body_format: json
+    method: POST
+    headers:
+      Content-Type: application/json
+    body:
+      name: "provision"
+      type: 'groovy'
+      content: "{{ lookup('file', 'provision.groovy') }}"
+
+- name: Run script
+  uri:
+    url: 'http://localhost:8081/service/rest/v1/script/provision/run'
+    url_username: admin
+    url_password: "{{ password.stdout }}"
+    force_basic_auth: yes
+    status_code: 200,204
+    method: POST
+    headers:
+      Content-Type: text/plain
+
+- name: Add script
+  uri:
+    url: 'http://localhost:8081/service/rest/v1/script'
+    url_username: admin
+    url_password: "{{ nexus_admin_password }}"
+    force_basic_auth: yes
+    body_format: json
+    status_code: 200,204
+    method: POST
+    headers:
+      Content-Type: application/json
+    body:
+      name: "ldap"
+      type: 'groovy'
+      content: "{{ lookup('file', 'ldap.groovy') }}"
+
+
+- name: Run script
+  uri:
+    url: 'http://localhost:8081/service/rest/v1/script/ldap/run'
+    url_username: admin
+    url_password: "{{ nexus_admin_password }}"
+    force_basic_auth: yes
+    status_code: 200,204
+    method: POST
+    headers:
+      Content-Type: text/plain
+
+- name: Remove unsecure scripts
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_fileglob: './files/*.groovy'
+  delegate_to: localhost
+  become: false

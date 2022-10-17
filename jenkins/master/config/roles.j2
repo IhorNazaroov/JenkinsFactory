@@ -1,0 +1,59 @@
+jenkins:
+  authorizationStrategy:
+    roleBased:
+      roles:
+        global:
+          - name: global-admin
+            description: "administrators"
+            permissions:
+              - "Overall/Administer"
+            assignments:
+              - admin
+{% for item in admins %}
+              - "{{ item }}"
+{% endfor %}
+
+          - name: "Read access"
+            description: "Read"
+            permissions:
+              - "Overall/Read"
+              - "View/Configure"
+              - "View/Create"
+              - "View/Delete"
+              - "View/Read"
+            assignments:
+{% for item in emploee %}
+              - "{{ item }}"
+{% endfor %}
+        items:
+{% for item in project %}
+          - name: "{{ item }}"
+            description: "Get full access to projects of authorized user"
+            pattern: "{{ item }}.*"
+            permissions:
+              - "Job/Read"
+              - "Job/Workspace"
+              - "Job/Configure"
+              - "Job/Build"
+              - "Job/Create"
+              - "Job/Cancel"
+              - "Job/Delete"
+              - "Job/Discover"
+              - "Run/Delete"
+              - "Run/Update"
+              - "SCM/Tag"
+            assignments:
+              - "Project {{ item }}"
+{% endfor %}
+        agents:
+{% for item in project %}
+          - name: "{{ item }}"
+            description: "{{ item }} Agent"
+            pattern: "{{ item }}-*"
+            permissions:
+              - "Agent/Build"
+              - "Agent/Connect"
+              - "Agent/Disconnect"
+            assignments:
+              - "Project {{ item}}"
+{% endfor %}

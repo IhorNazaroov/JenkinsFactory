@@ -1,0 +1,29 @@
+- name: Remove directory secrets
+  file:
+    path: "{{ jenkins_home }}/secrets"
+    state: absent
+
+- name: Create directory secrets
+  file:
+    path: "{{ jenkins_home }}/secrets"
+    owner: jenkins
+    group: jenkins
+    mode: 0700
+    state: directory
+
+- name: Copy master.key
+  copy:
+    src: ../secrets/master.key
+    dest: "{{ jenkins_home }}/secrets/master.key"
+
+- name: Copy hudson.util.Secret 
+  copy:
+    src: ../secrets/hudson.util.Secret
+    dest: "{{ jenkins_home }}/secrets/hudson.util.Secret"
+
+- name: Restart jenkins
+  service:
+    name: jenkins
+    state: restarted
+
+

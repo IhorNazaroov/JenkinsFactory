@@ -1,0 +1,46 @@
+{
+    "variables": {
+        "aws_access_key": "{{env `AWS_ACCESS_KEY_ID`}}",
+        "aws_secret_key": "{{env `AWS_SECRET_ACCESS_KEY`}}",
+        "env": "{{env `ENV`}}",
+        "stage": "{{env `STAGE`}}"
+    },
+    "builders": [
+        {
+            "type": "amazon-ebs",
+            "access_key": "{{user `aws_access_key`}}",
+            "secret_key": "{{user `aws_secret_key`}}",
+            "source_ami_filter": {
+              "filters": {
+                "name": "rdua-doaas-base-ami-{{user `env`}}-stable"
+              },
+              "owners": ["self"]
+            },
+            "subnet_id": "subnet-38a88c45",
+            "security_group_id": "sg-0e27601819826f6bd",
+            "instance_type": "t2.micro",
+            "ssh_username": "centos",
+            "ami_name": "packer-slave-{{user `env`}}-{{user `stage`}}",
+            "launch_block_device_mappings": [
+                {
+                    "device_name": "/dev/sda1",
+                    "volume_size": 10,
+                    "volume_type": "gp2",
+                    "delete_on_termination": true
+                },
+                {
+                    "device_name": "/dev/xvdb",
+                    "volume_size": 10,
+                    "volume_type": "gp2",
+                    "delete_on_termination": true
+                }
+            ]
+        }
+    ],
+    "provisioners": [
+        {
+            "type": "ansible",
+            "playbook_file": "{{template_dir}}/provisioners/main.yml"
+        }
+    ]
+}

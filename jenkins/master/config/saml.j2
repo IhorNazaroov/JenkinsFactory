@@ -1,0 +1,16 @@
+jenkins:
+  securityRealm:
+    saml:
+      binding: "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+      encryptionData:
+        forceSignRedirectBindingAuthnRequest: true
+      emailAttributeName: "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
+      displayNameAttributeName: "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"
+      groupsAttributeName: "http://schemas.xmlsoap.org/claims/Group"
+      idpMetadataConfiguration:
+        xml: |-
+          {{ lookup('file', '../epam-sso-integration/saml-metadata.xml') }}
+      maximumAuthenticationLifetime: 86400
+      usernameAttributeName: "http://schemas.microsoft.com/ws/2008/06/identity/claims/windowsaccountname"
+      usernameCaseConversion: "none"
+

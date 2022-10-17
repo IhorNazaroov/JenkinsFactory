@@ -1,0 +1,19 @@
+jobs:
+{% for item in folders.stdout_lines %}
+  - script: >
+      folder( '{{ item }}' )
+
+{% endfor %}
+
+{%- for item in content.results %}
+{% set test = item %}
+{% if  test.changed == true %}
+{% set job_full = "./job_templates/" ~ test.stdout %}
+{% set jobname = test.stdout %}
+{% filter indent(width=2, indentfirst=False)%}
+
+{% include  job_full %}
+
+{% endfilter %}
+{% endif %}
+{% endfor %}

@@ -1,0 +1,15 @@
+- java_keystore:
+    name: jenkins_certificate
+    certificate: "{{ lookup('file', '../ssl.crt') }}"
+    private_key: "{{ jenkins_ssl_private_key }}"
+    password: "{{ keystore_password }}"
+    dest: "{{ jenkins_home }}/jenkins.jks"
+
+- template:
+    src: jenkins.j2
+    dest: /etc/sysconfig/jenkins
+
+- name: Restart service jenkins
+  service:
+    name: jenkins
+    state: restarted

@@ -1,0 +1,18 @@
+- name: Get FLuentd
+  get_url:
+    url: https://toolbelt.treasuredata.com/sh/install-redhat-td-agent3.sh
+    dest: .
+
+- name: Install Fluentd
+  shell: ./install-redhat-td-agent3.sh
+
+- name: Import fluentd config
+  copy:
+    src: "td-agent.conf"
+    dest: "/etc/td-agent/td-agent.conf"
+
+- name: Start fluentd
+  service:
+    name: td-agent
+    state: started
+    enabled: yes

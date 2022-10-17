@@ -1,0 +1,26 @@
+- hosts: log_aggregator
+  become: true
+  become_user: root
+  roles:
+    - log_aggregator
+
+- hosts: slaves_general
+  become: true
+  become_user: root
+  roles:
+    - slaves_general
+
+- hosts: iEat
+  become: true
+  become_user: root
+  vars_files:
+    - "{{ lookup('env', 'PWD') }}/token.yml"
+  roles:
+    - iEat-slave
+
+- hosts: nexus
+  become: true
+  become_user: root
+  vars_files: "{{ lookup('env', 'PWD') }}/vault.yml"
+  roles:
+    - nexus

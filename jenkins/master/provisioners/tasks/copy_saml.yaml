@@ -1,0 +1,10 @@
+- name: Copy saml-jenkins-keystore.jks
+  copy:
+    src: ../epam-sso-integration/saml-jenkins-keystore.jks
+    dest: "{{ jenkins_home }}/saml-jenkins-keystore.jks"
+
+- name: Copy saml-jenkins-keystore.xml
+  copy:
+    src: ../epam-sso-integration/saml-jenkins-keystore.xml
+    dest: "{{ jenkins_home }}/saml-jenkins-keystore.xml"
+

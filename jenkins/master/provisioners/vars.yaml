@@ -1,0 +1,40 @@
+jenkins_home: /var/lib/jenkins
+jenkins_url: https://localhost:8443
+plugins:
+  - configuration-as-code
+  - configuration-as-code-support
+  - matrix-auth
+  - cloudbees-folder
+  - antisamy-markup-formatter
+  - build-timeout
+  - credentials-binding
+  - rebuild
+  - ssh-agent
+  - timestamper
+  - ws-cleanup
+  - junit
+  - workflow-aggregator
+  - build-pipeline-plugin
+  - conditional-buildstep
+  - pipeline-stage-view
+  - parameterized-trigger
+  - copyartifact
+  - bitbucket
+  - git
+  - gitlab-plugin
+  - ssh-slaves
+  - ldap
+  - role-strategy
+  - active-directory
+  - email-ext
+  - ec2
+  - maven-plugin
+  - pipeline-maven
+  - gradle
+  - generic-webhook-trigger
+  - saml
+  - aws-credentials
+  - script-security
+  - cucumber-reports
+  - git-parameter
+  - slack-notification

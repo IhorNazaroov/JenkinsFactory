@@ -1,0 +1,74 @@
+- name: Get FLuentd
+  get_url:
+    url: https://toolbelt.treasuredata.com/sh/install-redhat-td-agent3.sh
+    dest: .
+    mode: a+x
+
+- name: Install Fluentd
+  shell: ./install-redhat-td-agent3.sh
+
+- name: Import fluentd config
+  copy:
+    src: "td-agent.conf"
+    dest: "/etc/td-agent/td-agent.conf"
+
+- name: Import Kibana key
+  rpm_key:
+    state: present
+    key: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+
+- name: Add Kibana repo
+  copy:
+    dest: "/etc/yum.repos.d/kibana.repo"
+    content: |
+      [kibana-7.x]
+      name=Kibana repository for 7.x packages
+      baseurl=https://artifacts.elastic.co/packages/7.x/yum
+      gpgcheck=1
+      gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
+      enabled=1
+      autorefresh=1
+      type=rpm-md
+
+- name: Add Elasticsearch repo
+  copy:
+    dest: "/etc/yum.repos.d/elasticsearch.repo"
+    content: |
+      [elasticsearch-7.x]
+      name=Elasticsearch repository for 7.x packages
+      baseurl=https://artifacts.elastic.co/packages/oss-7.x/yum
+      gpgcheck=1
+      gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
+      enabled=1
+      autorefresh=1
+      type=rpm-md
+
+- name: Install Packages
+  yum:
+    name:
+     - elasticsearch-oss
+     - kibana
+
+- name: Import kibana config
+  copy:
+    src: "kibana.yml"
+    dest: "/etc/kibana/kibana.yml"
+
+- name: Start kibana
+  service:
+    name: kibana
+    state: started
+    enabled: yes
+
+- name: Start fluentd
+  service:
+    name: td-agent
+    state: started
+    enabled: yes
+
+- name: Start elasticsearch
+  service:
+    name: elasticsearch
+    state: started
+    enabled: yes
+

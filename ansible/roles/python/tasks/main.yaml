@@ -1,0 +1,19 @@
+---
+
+- name: Install centos-release-scl
+  yum:
+    name: centos-release-scl
+    state: present
+    update_cache: yes
+
+- name: "Install rh-python36"
+  yum:
+    name: "rh-python36"
+    state: present
+    update_cache: yes
+
+- name: Set python 3.6.x as a default version of python
+  lineinfile:
+    path: /etc/profile.d/scl-python.sh
+    line: "source /opt/rh/rh-python36/enable"
+    create: yes

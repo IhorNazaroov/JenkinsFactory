@@ -1,0 +1,17 @@
+- hosts: all
+  become: yes
+  remote_user: root
+  roles:
+    - migrate_data_on_mount
+    
+  post_tasks:    
+  - name: Install docker
+    yum:
+      name: docker
+      state: latest
+    
+  - name: Start Docker service
+    service:
+      name: docker
+      state: started
+      enabled: yes

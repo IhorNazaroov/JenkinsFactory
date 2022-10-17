@@ -1,0 +1,19 @@
+jobs:
+  - script: >
+      pipelineJob('reloadJCaC') {
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote {
+                  url('git@git.epam.com:epm-ihnaz/jenkins_factory.git')
+                  credentials('gitlab-ssh-private-key-readonly-access')
+                }
+                branch('*/develop')
+                scriptPath('jenkins/jobs/reload-config.groovy')
+              }
+            }
+            lightweight()
+          }
+        }
+      }

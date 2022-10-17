@@ -1,0 +1,33 @@
+- name: Wait for Jenkins to start up
+  uri:
+    url: "{{ jenkins_url }}"
+    user: admin
+    password: "{{ jenkins_initial_user_password }}"
+    status_code: 200
+    timeout: 5
+    validate_certs: no
+  register: jenkins_service_status
+  retries: 60
+  delay: 5
+  until: >
+    'status' in jenkins_service_status and
+    jenkins_service_status['status'] == 200
+
+- name: Install Plugins
+  jenkins_plugin:
+    timeout: 120
+    name: "{{ item }}"
+    url: "{{ jenkins_url }}"
+    url_username: "admin"
+    url_password: "{{ jenkins_initial_user_password }}"
+    validate_certs: no
+  with_items: "{{ plugins }}"
+  retries: 5
+  delay: 5
+  register: result
+  until: result is succeeded
+
+- name: Restart Jenkins if required
+  service:
+    name: jenkins
+    state: restarted

@@ -1,0 +1,45 @@
+- name: Change hostname
+  hostname:
+    name: doaas-jenkins-master
+
+- name: Download jenkins.repo
+  get_url:
+    url: http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo
+    dest: /etc/yum.repos.d/jenkins.repo
+
+- name: Import Jenkins Key
+  rpm_key:
+    state: present
+    key: https://jenkins-ci.org/redhat/jenkins-ci.org.key
+
+- name: Install Packages
+  yum:
+    name:
+      - java-1.8.0-openjdk-devel
+      - jenkins
+      - git
+    state: present
+
+- name: Disable initial setup wizard
+  copy:
+    content: "2.0"
+    dest: "{{ jenkins_home }}/jenkins.install.InstallUtil.lastExecVersion"
+
+- name: Create script directory
+  file:
+    path: "{{ jenkins_home }}/init.groovy.d"
+    state: directory
+
+- name: Add initial user configuration
+  template:
+    src: '{{ item.src }}'
+    dest: "{{ jenkins_home }}/init.groovy.d/{{ item.path }}"
+    mode: '{{ item.mode }}'
+  with_filetree: ../init.groovy.d/
+  when: item.state == 'file'
+
+- name: Start & Enable Jenkins
+  systemd:
+    name: jenkins
+    state: started
+    enabled: true

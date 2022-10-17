@@ -1,0 +1,29 @@
+- ami: "ami-0584e2291762f8d7e"
+  amiType:
+    unixData:
+      sshPort: "22"
+  associatePublicIp: true
+  connectBySSHProcess: false
+  connectionStrategy: PRIVATE_IP
+  deleteRootOnTermination: true
+  description: "Slave for docker builds executions."
+  ebsOptimized: false
+  idleTerminationMinutes: "1"
+  instanceCapStr: "1"
+  labelString: "docker-executor"
+  maxTotalUses: 1
+  minimumNumberOfInstances: 0
+  minimumNumberOfSpareInstances: 0
+  mode: NORMAL
+  monitoring: false
+  numExecutors: 1
+  remoteAdmin: "jenkins"
+  remoteFS: "{{ jenkins_home }}"
+  securityGroups: "default-europe, default"
+  stopOnTerminate: false
+  subnetId: "subnet-0ae87acd783b4d2ca subnet-0e5a370f78391804d subnet-0ef99a5dda8058fef"
+  t2Unlimited: false
+  type: T2Micro
+  useDedicatedTenancy: false
+  useEphemeralDevices: false
+useInstanceProfileForCredentials: false

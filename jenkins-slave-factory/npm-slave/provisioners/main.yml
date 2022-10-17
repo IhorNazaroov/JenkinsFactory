@@ -1,0 +1,36 @@
+- name: Configure npm-slave AMI
+  hosts: all
+  vars_files: ./vars/main.yml
+  become: true
+  become_user: "{{ user_name }}"
+  tasks:
+    - name: Create directory nvm
+      file:
+        path: "{{ user_home }}/.nvm"
+        state: directory
+
+    - name: Create ~/.bashrc if it does not exist
+      file:
+        path: "{{ user_home }}/.bashrc"
+        state: file
+
+    - name: Download nvm
+      get_url:
+        url: https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.2/install.sh
+        dest: "{{ user_home }}/.nvm/nvm.sh"
+
+    - name: Add to environment
+      shell: |
+        export NVM_DIR="{{ user_home }}/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  
+        [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  
+        
+    - name: Sorce nvm.sh
+      shell: "source {{ user_home }}/.nvm/nvm.sh"
+      args:  
+        chdir: "{{ user_home }}"
+     
+    - name: Install NodeJS and npm
+      shell: "source {{ user_home }}/.bashrc && nvm install {{ node_version }}"
+      args:
+        chdir: "{{ user_home }}"

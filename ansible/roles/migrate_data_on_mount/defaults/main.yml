@@ -1,0 +1,4 @@
+---
+# defaults file for migrate_data_on_mount
+path : /var
+device: /dev/xvdb

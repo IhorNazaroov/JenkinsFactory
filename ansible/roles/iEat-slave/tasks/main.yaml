@@ -1,0 +1,80 @@
+- name: Create jenkins user
+  user:
+    name: jenkins
+    shell: /bin/bash
+    groups: wheel
+    append: yes
+    system: yes
+
+- name: Get agent.jar
+  get_url:
+    url: https://jenkins.doaas.lab.com:8443/jnlpJars/agent.jar
+    dest: ~/
+    username: admin
+    password: "{{ token }}"
+    validate_certs: no
+  become_user: jenkins
+
+- name: Get JDK
+  get_url:
+    url: 'http://download.oracle.com/otn-pub/java/jdk/8u131-b11/d54c1d3a095b4ff2b6607d096fa80163/jdk-8u131-linux-x64.rpm'
+    dest: '/root/'
+    headers: "Cookie: oraclelicense=accept-securebackup-cookie"
+
+- name: Install JDK
+  yum:
+    name: 'jdk-8u131-linux-x64.rpm'
+
+- name: Install CentOS packages
+  yum:
+    name:
+      - git
+      - unzip
+      - docker
+      - docker-compose
+  when: ansible_os_family == "RedHat"
+
+- name: Get gradle
+  get_url:
+    url: https://services.gradle.org/distributions/gradle-6.2.1-bin.zip
+    dest: /tmp
+    owner: jenkins
+    mode: '755'
+
+- name: Create directory
+  file:
+    path: /opt/gradle
+    state: directory
+
+- name: Unzip gradle
+  unarchive:
+    src: "/tmp/gradle-6.2.1-bin.zip"
+    dest: /opt/gradle
+    remote_src: yes
+
+- name: "Export nexus password"
+  copy:
+    dest: "/etc/profile.d/npass.sh"
+    content: |
+      export PASS="{{ nexus_admin_password }}"
+
+- name: "Export env gradle variables"
+  copy:
+    dest: "/etc/profile.d/gradle.sh"
+    content: |
+      export GRADLE_HOME=/opt/gradle/gradle-6.2.1
+      export PATH=${GRADLE_HOME}/bin:${PATH}
+
+- name: "Export java env variables"
+  copy:
+    dest: "/etc/profile.d/java.sh"
+    content: |
+      export JAVA_HOME=/usr/java/jdk1.8.0_131
+
+- name: Run agent.jar
+  shell:
+    chdir: ~/
+    cmd: " java -jar agent.jar -jnlpUrl https://jenkins.lab.com:8443/computer/slave-agent.jnlp -jnlpCredentials admin:{{ token }} -noCertificateCheck </dev/null >/dev/null 2>&1 &"
+  async: 45
+  poll: 0
+  become_user: jenkins

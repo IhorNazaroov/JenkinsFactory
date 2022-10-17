@@ -1,0 +1,8 @@
+jnlp-slave:
+  - jnlp0
+  - jnlp1
+
+ssh-slave:
+  name: ssh1
+  ip: 192.168.1.1
+  credentialsId: ssh1-cred

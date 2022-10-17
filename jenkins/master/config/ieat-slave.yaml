@@ -1,0 +1,8 @@
+jenkins:
+  nodes:
+    - permanent:
+        labelString: "iEAT-slave"
+        mode: NORMAL
+        name: "iEAT-slave"
+        numExecutors: 3
+        remoteFS: "/"

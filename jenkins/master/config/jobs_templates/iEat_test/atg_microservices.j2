@@ -1,0 +1,30 @@
+- script: >
+    pipelineJob('{{ jobname|replace(".j2", "")}}') {
+                triggers {
+                    scm('H/5 10-20 * * 1-5')
+                }
+                parameters {
+                    choiceParam('OPTION', ['IEATProd', 'IEATPub'])
+                    stringParam('PROJECT_VERSION', '1.0')
+                    gitParam('branchName') {
+                      description('')
+                      type('BRANCH')
+                      defaultValue('develop')
+                    }
+                }
+      definition {
+        cpsScm {
+          scm {
+            git {
+              remote {
+                url('git@git.epam.com:epm-rdua/kh-doaas.git')
+                credentials('gitlab-ssh-private-key-readonly-access')
+              }
+              branch('*/develop')
+              scriptPath('jenkins/jobs/{{ jobname|replace(".j2", ".groovy")}}')
+            }
+          }
+          lightweight()
+        }
+      }
+    }

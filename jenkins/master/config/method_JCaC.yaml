@@ -1,0 +1,7 @@
+security:
+  scriptApproval:
+    approvedSignatures:
+      - method java.lang.String indexOf int
+      - method io.jenkins.plugins.casc.ConfigurationAsCode configure
+      - staticMethod io.jenkins.plugins.casc.ConfigurationAsCode get
+      - method io.jenkins.plugins.casc.ConfigurationAsCode configure java.lang.String[]

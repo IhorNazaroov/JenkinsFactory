@@ -1,0 +1,28 @@
+- ami: "ami-00373ddb7c9d839a0"
+  amiType:
+    unixData:
+      sshPort: "22"
+  associatePublicIp: true
+  connectBySSHProcess: false
+  connectionStrategy: PRIVATE_IP
+  deleteRootOnTermination: true
+  description: "Slave for packer builds executions."
+  ebsOptimized: false
+  idleTerminationMinutes: "1"
+  instanceCapStr: "1"
+  labelString: "packer-executor"
+  maxTotalUses: 1
+  minimumNumberOfInstances: 0
+  minimumNumberOfSpareInstances: 0
+  mode: NORMAL
+  monitoring: false
+  numExecutors: 1
+  remoteAdmin: "jenkins"
+  remoteFS: "{{ jenkins_home }}"
+  securityGroups: "epam-europe, default"
+  stopOnTerminate: false
+  subnetId: "subnet-0ae87acd783b4d2ca subnet-0e5a370f78391804d subnet-0ef99a5dda8058fef"
+  t2Unlimited: false
+  type: T2Micro
+  useDedicatedTenancy: false
+  useEphemeralDevices: false

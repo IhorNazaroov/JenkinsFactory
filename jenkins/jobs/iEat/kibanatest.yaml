@@ -1,0 +1,178 @@
+version: '3.5'
+
+networks:
+ 
+  
+  nextcloudnetwork:
+    name: nextcloudnetwork
+
+volumes:
+  nextcloud-db:
+    driver: local
+  nextcloud-db-logs:
+    driver: local
+  nextcloud-redis:
+    driver: local
+  nextcloud-html:
+    driver: local
+  nginx-conf:
+    driver: local
+  nginx-logs:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  elastic_data:
+    driver: local
+  filebeat_data:
+    driver: local
+
+
+services:
+
+  nextcloud-db:
+    container_name: nextcloud-db
+    image: mariadb
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    restart: always
+    networks:
+      - nextcloudnetwork
+    volumes:
+      - nextcloud-db:/var/lib/mysql
+      - nextcloud-db-logs:/var/log/mysql
+    environment:
+      - TZ=${DOCKER_TZ}
+      - MYSQL_ROOT_PASSWORD=${NEXCLOUD_DB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${NEXTCLOUD_DB_NAME}
+      - MYSQL_USER=${NEXTCLOUD_DB_USER}
+      - MYSQL_PASSWORD=${NEXTCLOUD_DB_PASSWORD}
+    labels:
+      co.elastic.logs/disable: false
+
+  nextcloud-app:
+    container_name: nextcloud-app
+    
+    image: docker.remim.com/nextcloud:latest
+    networks:
+      - nextcloudnetwork 
+    restart: always
+    depends_on:
+      - nextcloud-db
+    environment:
+      - TZ=${DOCKER_TZ}
+      - MYSQL_DATABASE=${NEXTCLOUD_DB_NAME}
+      - MYSQL_USER=${NEXTCLOUD_DB_USER}
+      - MYSQL_PASSWORD=${NEXTCLOUD_DB_PASSWORD}
+      - MYSQL_HOST=nextcloud-db
+      - NEXTCLOUD_ADMIN_USER=${NEXTCLOUD_ADMIN_USER}
+      - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD}
+      - NEXTCLOUD_TRUSTED_DOMAINS=${NEXTCLOUD_DOMAIN}
+      - NEXTCLOUD_OVERWRITEPROTOCOL=https
+      - REDIS_HOST=nextcloud-redis
+      - REDIS_HOST_PORT=6379
+    volumes:
+      - nextcloud-html:/var/www/html
+      - ${MY_DOCKER_DATA_DIR}/nextcloud/data:/var/www/html/data
+    labels:
+      co.elastic.logs/disable: false
+      co.elastic.logs/module: php-fpm
+      co.elastic.logs/fileset.stdout: logs
+      co.elastic.logs/fileset.stderr: logs
+
+  # nginx:
+  #   container_name: nginx
+    
+  #   image: docker.remim.com/nginx-fpm:latest
+  #   networks:
+  #     nextcloudnetwork:   
+  #       aliases:
+  #         - nextcloud-vts-status
+  #   restart: always
+  #   depends_on:
+  #     - nextcloud-app
+  #   environment:
+  #     - TZ=${DOCKER_TZ}
+  #     - VIRTUAL_HOST=${NEXTCLOUD_DOMAIN}
+  #     - VIRTUAL_PORT=80
+  #     - VIRTUAL_PROTO=http
+  #     - LETSENCRYPT_HOST=${NEXTCLOUD_DOMAIN}
+  #     - LETSENCRYPT_EMAIL=${NOTIFICATION_EMAIL}
+  #   volumes:
+  #     - nextcloud-html:/var/www/html:ro
+  #     - ${MY_DOCKER_DATA_DIR}/nextcloud/data:/var/www/html/data:ro
+  #   labels:
+  #     co.elastic.logs/disable: false
+  #     co.elastic.logs/module: nginx
+  #     co.elastic.logs/fileset.stdout: access
+  #     co.elastic.logs/fileset.stderr: error
+
+  kibana:
+    container_name: kibana
+    image: docker.elastic.co/kibana/kibana:7.0.0
+    restart: always
+    networks:
+      - nextcloudnetwork
+    environment:
+      - TZ=${DOCKER_TZ}
+      - SERVER_NAME=${KIBANA_DOMAIN}
+      - SERVER_PORT=5601
+      - SERVER_HOST="0"
+      - ELASTICSEARCH_HOST=elasticsearch:9200
+      - VIRTUAL_HOST=${KIBANA_DOMAIN}
+      - VIRTUAL_PORT=5601
+      - VIRTUAL_PROTO=http
+    depends_on:
+      - elasticsearch
+    labels:
+      co.elastic.logs/disable: false
+      co.elastic.logs/module: kibana
+
+  elasticsearch:
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.0.0
+    restart: always
+    networks:
+      - nextcloudnetwork
+    environment:
+      - TZ=${DOCKER_TZ}
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elastic_data:/usr/share/elasticsearch/data
+    labels:
+      co.elastic.logs/disable: false
+      co.elastic.logs/module: elasticsearch
+
+  # filebeat:
+  #   container_name: filebeat
+  #   image: docker.elastic.co/beats/filebeat:7.0.0
+  #   restart: always
+  #   user: root
+  #   networks:
+  #     - nextcloudnetwork
+  #   volumes:
+  #     - ${MY_DOCKER_DATA_DIR}/filebeat/module/php-fpm:/usr/share/filebeat/module/php-fpm
+  #     - ${MY_DOCKER_DATA_DIR}/filebeat/module/nginx/access/ingest/default.json:/usr/share/filebeat/module/nginx/access/ingest/default.json
+  #     - ${MY_DOCKER_DATA_DIR}/filebeat/module/apache/access/ingest/default.json:/usr/share/filebeat/module/apache/access/ingest/default.json
+  #     - ${MY_DOCKER_DATA_DIR}/filebeat/module/system/syslog/manifest.yml:/usr/share/filebeat/module/system/syslog/manifest.yml
+  #     - ${MY_DOCKER_DATA_DIR}/filebeat/module/system/auth/manifest.yml:/usr/share/filebeat/module/system/auth/manifest.yml
+  #     - ${MY_DOCKER_DATA_DIR}/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+  #     - filebeat_data:/usr/share/filebeat/data
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #     - /var/lib/docker/containers/:/var/lib/docker/containers/:ro
+  #     - /var/log/:/var/log/:ro
+  #     - nextcloud-db-logs:/mnt/nextcloud-db-log:ro
+  #   environment:
+  #     - TZ=${DOCKER_TZ}
+  #     - ELASTICSEARCH_HOST=elasticsearch:9200
+  #     - KIBANA_HOST=kibana:5601
+  #   command: ["--strict.perms=false"]
+  #   labels:
+  #     co.elastic.logs/disable: false

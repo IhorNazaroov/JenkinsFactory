@@ -1,0 +1,18 @@
+- script: >
+    pipelineJob('{{ jobname|replace(".j2", "")}}') {
+      definition {
+        cpsScm {
+          scm {
+            git {
+              remote {
+                url('git@git.com:epm-rdua/kh-doaas.git')
+                credentials('gitlab-ssh-private-key-readonly-access')
+              }
+              branch('*/develop')
+              scriptPath('jenkins/jobs/{{ jobname|replace(".j2", ".groovy")}}')
+            }
+          }
+          lightweight()
+        }
+      }
+    }

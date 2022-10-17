@@ -1,0 +1,36 @@
+- hosts: jenkins-master
+  become: true
+  become_user: root
+  vars_files:
+    - "{{ lookup('env', 'PWD') }}/vault.yml"
+    - ./vars.yaml
+    - ./roles.yaml
+
+  tasks:
+  - name: "Check if Jenkins is installed"
+    package_facts:
+      manager: "auto"
+
+  - name: Install Jenkins
+    import_tasks: ./tasks/install_jenkins.yaml
+    when: "'jenkins' not in ansible_facts.packages"
+
+  - name: Reuse backed up key primitives
+    import_tasks: ./tasks/reuse_backed_up_key_primitives.yaml
+    when: "'jenkins' not in ansible_facts.packages"
+
+  - name: Configure jenkins for https use
+    import_tasks: ./tasks/use_https.yaml
+
+  - name: Create token for user admin
+    import_tasks: ./tasks/make_token.yaml
+    when: "'jenkins' not in ansible_facts.packages"
+
+  - name: Install plugins
+    import_tasks: ./tasks/install_plugins.yaml
+
+  - name: Copy saml configuration files
+    import_tasks: ./tasks/copy_saml.yaml
+
+  - name: Apply initial config
+    import_tasks: ./tasks/apply_initial_jcac_config.yaml

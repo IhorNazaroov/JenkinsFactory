@@ -1,0 +1,99 @@
+- name: Wait for Jenkins to start up
+  uri:
+    url: "{{ jenkins_url }}"
+    user: admin
+    password: "{{ jenkins_initial_user_password }}"
+    validate_certs: no
+    status_code: 200
+    timeout: 5
+  register: jenkins_service_status
+  retries: 60
+  delay: 5
+  until: >
+    'status' in jenkins_service_status and
+    jenkins_service_status['status'] == 200
+
+- name: Create token
+  uri:
+    url: 'https://jenkins.factory.com:8443/me/descriptorByName/jenkins.security.ApiTokenProperty/generateNewToken'
+    user: admin
+    password: "{{ jenkins_initial_user_password  }}"
+    method: POST
+    validate_certs: no
+    body: 'newTokenName=api'
+    force_basic_auth: yes
+    return_content: yes
+  register: content
+
+- name: Create password file
+  copy:
+    content: "{{ token_vault_pass }}"
+    dest: pass
+  become: false
+  delegate_to: localhost
+
+- name: Encrypt token
+  shell:
+    cmd: "echo -n {{ content.json.data.tokenValue }} | ansible-vault encrypt_string --vault-id token@pass --stdin-name 'token' > {{ lookup('env', 'PWD') }}/token.yml"
+  become: false
+  delegate_to: localhost
+
+- name: Delete password file
+  file:
+    path: ./pass
+    state: absent
+  become: false
+  delegate_to: localhost
+
+- name: Git - get branch name
+  shell:
+    chdir: "{{ lookup('env', 'PWD') }}"
+    cmd:  ' git symbolic-ref HEAD 2>/dev/null | cut -d"/" -f 3 '
+  become: false
+  delegate_to: localhost
+  register: branch
+
+- name: Git - Adding
+  shell:
+    chdir: "{{ lookup('env', 'PWD') }}"
+    cmd: "git add ."
+  register: gitadd
+  become: false
+  delegate_to: localhost
+
+- debug:
+    var: gitadd.cmd
+
+- name: Git - commiting
+  shell:
+    chdir: "{{ lookup('env', 'PWD') }}"
+    cmd: git commit -m "[AUTO] token updated"
+  register: gitcommit
+  become: false
+  delegate_to: localhost
+
+- debug:
+    var: gitcommit.stdout
+
+- name: Git - push
+  shell:
+    chdir: "{{ lookup('env', 'PWD') }}"
+    cmd: " git push origin {{ branch.stdout }}:ansible_auto --force "
+
+  register: gitpush
+  become: false
+  delegate_to: localhost
+
+- debug:
+    var: gitpush
+
+- name: Create merge request
+  uri:
+    url: https://git.epam.com/api/v4/projects/78089/merge_requests
+    method: POST
+    status_code: 201
+    headers:
+      PRIVATE-TOKEN: "{{ gitlab_private_token }}"
+    body_format: json
+    body:
+      "{ \"id\": \"78089}\", \"title\": \"[AUTO] Ansible provision was done, token.yml was updated\", \"assignee_id\": \"16479\", \"source_branch\": \"ansible_auto\", \"target_branch\": \"develop\" }"

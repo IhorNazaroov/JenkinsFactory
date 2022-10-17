@@ -1,0 +1,3 @@
+node_version: "13.8.0"
+user_name: "jenkins"
+user_home: "/var/lib/{{ user_name }}"

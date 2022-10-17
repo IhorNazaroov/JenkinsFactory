@@ -1,0 +1,38 @@
+- hosts: slave
+  become: true
+  become_user: root
+  vars_files:
+    - "{{ lookup('env', 'PWD') }}/token.yml"
+    - ./vars.yaml
+    - ./roles.yaml
+
+  tasks:
+  - name: Get agent.jar
+    get_url:
+      url: https://jenkins.factory.com:8443/jnlpJars/agent.jar
+      dest: ~/
+      username: admin
+      password: "{{ token }}"
+      validate_certs: no
+    become: false
+
+  - name: Install Ubuntu packages
+    apt:
+      name:
+        - git
+        - default-jre
+    when: ansible_os_family == "Debian"
+
+  - name: Install CentOS packages
+    yum:
+      name:
+        - git
+        - java-1.8.0-openjdk
+    when: ansible_os_family == "RedHat"
+
+  - name: Run agent.jar
+    shell:
+      chdir: ~/
+      cmd: " java -jar agent.jar -jnlpUrl https://jenkins.factory.com:8443/computer/{{ slave_name }}/slave-agent.jnlp -jnlpCredentials admin:{{ token }} -noCertificateCheck </dev/null >/dev/null 2>&1 &"
+    async: 45
+    poll: 0

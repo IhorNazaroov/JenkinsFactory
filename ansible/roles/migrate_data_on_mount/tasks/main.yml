@@ -1,0 +1,28 @@
+---
+# tasks file for migrate_data_on_mount
+  - name: "Create a ext4 filesystem on {{ device }}"
+    filesystem:
+      fstype: ext4
+      dev: "{{ device }}"
+
+  - name: Ensure backup directory exist
+    file:
+      path: /data_backup_dir
+      state: directory
+
+  - name: "Backup  {{ path }} directory"
+    shell:
+      cmd: cp -ax * /data_backup_dir
+      chdir: "{{ path }}"
+
+  - name: "Ensure separated ebs is mounted on {{ path }}"
+    mount:
+      path: "{{ path }}"
+      src: "{{ device }}"
+      state: mounted
+      fstype: ext4
+
+  - name: "Restore {{ path }} directory content"
+    shell:
+      cmd: "cp -ax * {{ path }}"
+      chdir: /data_backup_dir
